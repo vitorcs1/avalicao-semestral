@@ -4,31 +4,24 @@
 {% block title %}Flasky{% endblock %}
 
 {% block page_content %}
-<div class="page-header">
-    <h1>Olá, {% if name %}{{ name }}{% else %}Estranho{% endif %}!</h1>
-    {% if not known %}
-    <p>Prazer em conhecê-lo</p>
-    {% else %}
-    <p>Feliz em vê-lo novamente</p>
-    {% endif %}
-</div>
+
 {{ wtf.quick_form(form) }}
 
-<h2>Relação de usuários cadastrados</h2>
+<h2>Relação de alunos cadastrados</h2>
 
 <table class="table">
     <thead>
         <tr>
-            <th>Nome do usuario</th>
-            <th>Função</th>
+            <th>Aluno</th>
+            <th>Disciplina</th>
         </tr>
     </thead>
     <tbody>
-        {% for users in all_user%}
+        {% for user in all_user%}
         <tr>
-            <td>{{users.username}}</td>
-            {% if users.role.name %}
-                <td> {{users.role.name}}</td>
+            <td>{{user.name}}</td>
+            {% if user.disciplina_id%}
+                <td> {{user.disciplina_id}}</td>
             {%else%}
                 <td>User</td>
             {%endif%}

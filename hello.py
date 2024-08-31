@@ -3,7 +3,7 @@ from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, SelectField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -22,34 +22,35 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-class Role(db.Model):
-    __tablename__ = 'roles'
+class Disciplinas(db.Model):
+    __tablename__ = 'disciplinas'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    users = db.relationship('User', backref='role', lazy='dynamic')
+    alunos = db.relationship('Alunos', backref='disciplinas', lazy='dynamic')
 
     def __repr__(self):
-        return '<Role %r>' % self.name
+        return '<Disciplinas %r>' % self.name
 
 
-class User(db.Model):
-    __tablename__ = 'users'
+class Alunos(db.Model):
+    __tablename__ = 'alunos'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    name = db.Column(db.String(255), unique=True, index=True)
+    disciplina_id = db.Column(db.Integer, db.ForeignKey('disciplinas.id'))
 
     def __repr__(self):
-        return '<User %r>' % self.username
+        return '<Alunos %r>' % self.name
 
 
 class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    name = StringField('Cadastre o novo Aluno:', validators=[DataRequired()])
+    disciplina = SelectField('Disciplina associada:', validators=[DataRequired()])
+    submit = SubmitField('Cadastrar')
 
 
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, User=User, Role=Role)
+    return dict(db=db, Alunos=Alunos, Disciplinas=Disciplinas)
 
 
 @app.errorhandler(404)
@@ -61,21 +62,29 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html'), 500
 
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
+    return render_template('home.html')
+
+
+@app.route('/alunos', methods=['GET', 'POST'])
+def alunos():
     form = NameForm()
+
+    form.disciplina.choices = [(d.id, d.name) for d in Disciplinas.query.all()]
+
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.name.data).first()
-        if user is None:
-            user = User(username=form.name.data)
-            db.session.add(user)
-            db.session.commit()
-            session['known'] = False
-        else:
-            session['known'] = True
-        session['name'] = form.name.data
+        #user = User.query.filter_by(username=form.name.data).first()
+        #if user is None:
+        aluno = Alunos(name=form.name.data, disciplina_id=form.disciplina.data)
+        db.session.add(aluno)
+        db.session.commit()
+        #session['known'] = False
+        #else:
+        #session['known'] = True
+        #session['name'] = form.name.data
         return redirect(url_for('index'))
-    all_user = User.query.all()
-    return render_template('index.html', form=form, all_user = all_user, name=session.get('name'),
-                           known=session.get('known', False))
+    all_user = Alunos.query.all()
+    return render_template('index.html', form=form, all_user = all_user)
+    #name=session.get('name'),
+    #known=session.get('known', False))
